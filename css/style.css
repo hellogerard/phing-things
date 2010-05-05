@@ -1,0 +1,96 @@
+.content 
+{
+	width:690px;
+	margin 0 auto;
+ }
+
+.header
+{
+	margin-left:0px;
+	margin-right:0px;
+	background-color:#EEE8AA;
+	height:102px;
+}
+
+.navigation
+{
+	margin:20px 0px 20px 0px;
+	font-size: 1em;
+}
+
+.navigation a:link {
+	color: #000000;
+	text-decoration: none;
+}
+
+.navigation a:visited {
+	color: #000000;
+	text-decoration: none;
+}
+
+.navigation a:hover{
+	color: #EEE8AA;
+	text-decoration: none;
+}
+
+.navigation a:active {
+	color: #000000;
+	text-decoration: none;
+}
+
+.logoimg {
+	margin-left:20px;
+	width:100px;
+	float:left;
+	display: inline;
+}
+
+.logo { 
+	display: inline;
+	font-size: 55px;
+	margin-left:80px;
+	line-height:90px;
+} 
+
+.sidebar {
+	width:150px;
+	float:left;
+	margin: 0px 20px 0px 20px;
+	display:inline;
+}
+
+.main {
+	width:430px;
+	margin-left:200px;
+	margin-right:20px;
+	padding-top:5px;
+	font-size: 1em;
+}
+
+.main h1 {
+	font-size: 1.5em; 
+}
+
+body {
+	background: url(/images/gradient.jpg);
+	background-repeat:repeat-x;
+	background-color:#EEE8AA;
+	text-align:center; 
+	font-size: 1em; 
+	font-family: Tahoma,Verdana, Helvetica, Arial;
+}
+	
+.footer {
+	font-size: .8em; 
+	text-align:center; 
+	width:690px;
+}
+
+.clear {
+	float: none;
+	clear: both;
+	height: 1px;
+	margin: 0;
+	padding: 0;
+}
+
