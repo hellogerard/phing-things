@@ -9,184 +9,148 @@
  */
 
 
-require_once('class.yui_compressor.php');
-
-
 class JSOptimizer
 {
-    private $_staticWebRoot;
-    private $_jsDir;
+    private $_host;
+    private $_yuiPath;
+    private $_webRoot;
+    private $_toDir;
+    private $_phing;
 
-    public function __construct($staticWebRoot, $jsDir)
+    public function __construct($host, $yuiPath, $webRoot, $toDir, $phing)
     {
-        $this->_staticWebRoot = $staticWebRoot;
-        $this->_jsDir = $jsDir;
+        $this->_host = $host;
+        $this->_yuiPath = $yuiPath;
+        $this->_webRoot = $webRoot;
+        $this->_toDir = $toDir;
+        $this->_phing = $phing;
     }
 
-    public function build($buffer)
+    public function optimize($buffer)
     {
         $output = '';
 
         // matched buffer comes in from preg_replace_callback() as array
         $buffer = $buffer[0];
 
-        // gather file names
-        // get URL's for each JS file in each JS tag of the HTML block
+        // get URL's for each JS files in each JS tag
         preg_match_all('/src="([^"]*)"/', $buffer, $urls);
+        $files = array();
+        foreach ($urls[1] as $url)
+        {
+            $files[] = trim(trim($url), '/');
+        }
 
         // set up some variables for str_replace()
         $needles = array('/', '.js');
-        $replace = array('_', '');
+        $replace = array('.', '');
 
-        // get list of all partners for expansion
-        $partners = @scandir($this->_jsDir . "/partners");
-        array_unshift($partners, 'core');
+        // get the final filename
+        $bundlefile = str_replace($needles, $replace, join('-', $files));
 
-        // for each partner, create a combined, minified file
-        foreach ($partners as $partner)
+        // build the combined, minified output file
+        // the latest mod time of the set is in output file name
+        try
         {
-            if ($partner == "." || $partner == "..")
-            {
-                continue;
-            }
+            $this->_phing->log("Building {$this->_toDir}/$bundlefile.js", Project::MSG_VERBOSE);
 
-            if (($files = $this->_determineSet($urls, $latest, $partner)) !== false)
-            {
-                // get the final filename
-                $set = str_replace($needles, $replace, implode('-', $files));
-
-                if (($newLatest = $this->_compareSet($set, $latest)) !== false)
-                {
-                    // build the output file
-                    // the latest mod time of the set is in output file name
-                    try
-                    {
-                        $this->_saveSet($set, $files, $newLatest);
-                    }
-                    catch (Exception $e)
-                    {
-                        $this->log($e->getMessage(), Project::MSG_ERR);
-                    }
-                }
-
-                // get a dynamic filename which we will output at the end
-                $unexpanded = str_replace($partner, '`$partnerName`', $set);
-            }
+            $latest = $this->_build($bundlefile, $files);
+        }
+        catch (Exception $e)
+        {
+            throw new BuildException($e->getMessage());
         }
 
-        if (strpos($unexpanded, '$partnerName') !== false)
-        {
-            // output the dynamic JS call - on page load, Smarty will find the 
-            // final version
-            $webRoot = $this->_webRoot("$unexpanded-*.js");
-            $output .= "<script src=\"$webRoot/{glob file=\"$unexpanded-*.js\"}\" type=\"text/javascript\"></script>\n";
-        }
-        else
-        {
-            // output the static JS tag
-            $webRoot = $this->_webRoot("$set-$latest.js");
-            $output .= "<script src=\"$webRoot/$set-$latest.js\" type=\"text/javascript\"></script>\n";
-        }
-
+        // output the static JS tag
+        $twoBitValue = 0x3 & crc32("$bundlefile-$latest.js");
+        $host = str_replace('?', $twoBitValue, $this->_host);
+        $path = "http://$host/$bundlefile-$latest.js";
+        $output = "<script src=\"$path\" type=\"text/javascript\"></script>\n";
         return $output;
     }
 
-    private function _webRoot($file)
+    private function _build($bundlefile, $files)
     {
-        $twoBitValue = 0x3 & crc32($file);
-        return str_replace("?", $twoBitValue, $this->_staticWebRoot);
-    }
+        static $alreadyLoaded = array();
 
-    private function _determineSet($urls, &$latest, $partner)
-    {
-        // determine correct versions and latest mod time of files
-        // return the name of the combined set of files
-
-        $files = array();
+        $buffer = '';
         $latest = 0;
-        foreach ($urls as $file)
-        {
-            $file = str_replace('$partnerName', $partner, $file);
-            if ( $partner != 'core' && ($mtime = @filemtime( $this->_jsDir . "/partners/$partner$file")) !== false )
-            {
-                $files[] = "/partners/$partner$file";
-            }
-            else if ( ($mtime = @filemtime( $this->_jsDir . $file)) !== false )
-            {
-                $files[] = $file;
-            }
 
-            if ($mtime !== false && $mtime > $latest)
-            {
-                $latest = $mtime;
-            }
-        }
-
-        // if no files are found
-        if (empty($files))
-        {
-            return false;
-        }
-
-        return $files;
-    }
-
-    private function _compareSet($set, $latest)
-    {
-        $existing = glob($this->_jsDir . "/$set-*.js");
-
-        // if the set does not exist, create new set outright
-        if (! $existing[0])
-        {
-            return $latest;
-        }
-
-        // else the set already exists
-        else
-        {
-            // get the existing set's latest mod time (in the filename)
-            preg_match("/-([0-9]+)\./", $existing[0], $matches);
-            $oldLatest = $matches[1];
-
-            // compare the latest mod time of the set to the existing file name
-            // if $latest is greater than $oldLatest, create new file
-            if ($latest > $oldLatest)
-            {
-                // delete the old file
-                @unlink($this->_jsDir . "/$set-$oldLatest.js");
-
-                return $latest;
-            }
-        }
-
-        // else source files have not changed - no need to build bundle
-        return false;
-    }
-
-    private function _saveSet($set, $files, $timestamp)
-    {
-        // build the output file
-        if (($handle = fopen($this->_jsDir . "/$set-$timestamp.js", 'w')) === false)
-        {
-            throw new Exception("Unable to create {$this->_jsDir}/$set-$timestamp.js");
-        }
-
-        // combine all files into one
         foreach ($files as $file)
         {
-            $jsSrcFile = $this->_jsDir . $file;
-            
-            // compress file contents
-            $contents = trim(YuiCompress::compress ($jsSrcFile, YuiCompress::JS_TYPE));
-            
-            if (fwrite($handle, $contents) === false)
+            if (isset($alreadyLoaded[$file]))
             {
-                fclose($handle);
-                throw new Exception("Unable to write to {$this->_jsDir}/$set-$timestamp.js");
+                continue;
             }
+            else
+            {
+                $alreadyLoaded[$file] = true;
+            }
+
+            $file = trim($file, '/');
+
+            $mtime = filemtime("{$this->_webRoot}/$file");
+            if ($mtime > $latest)
+            {
+                // get the latest modification time
+                $latest = $mtime;
+            }
+
+            // skip files that appear to be minified or packed already
+            if (strpos($file, '.min.') !== false || strpos($file, '.pack.') !== false)
+            {
+                $buffer .= file_get_contents("{$this->_webRoot}/$file") . "\n";
+            }
+            else
+            {
+                $buffer .= $this->_minify("{$this->_webRoot}/$file") . "\n";
+            }
+        }
+
+        // open the output file
+        if (! file_exists($this->_toDir) && ! mkdir($this->_toDir, 0755, true))
+        {
+            throw new Exception("Unable to create {$this->_toDir}");
+        }
+        
+        if (($handle = fopen("{$this->_toDir}/$bundlefile-$latest.js", 'w')) === false)
+        {
+            throw new Exception("Unable to create {$this->_toDir}/$bundlefile-$latest.js");
+        }
+
+        if (fwrite($handle, $buffer) === false)
+        {
+            fclose($handle);
+            throw new Exception("Unable to write to {$this->_toDir}/$bundlefile-$latest.js");
         }
 
         fclose($handle);
+
+        return $latest;
+    }
+
+    private function _minify($file)
+    {
+        $this->_phing->log("Attempting to minify $file", Project::MSG_VERBOSE);
+
+        $tmp = (function_exists('sys_get_temp_dir')) ? sys_get_temp_dir() : '/tmp';
+        $tmpFile = tempnam($tmp, "yui");
+
+        $command = "java -jar " . $this->_yuiPath . " --type js -o $tmpFile $file";
+        exec($command, $dummy, $status);
+
+        if ($status === 0)
+        {
+            $buffer = file_get_contents($tmpFile);
+        }
+        else
+        {
+            // if error, return original file
+            $buffer = file_get_contents($file);
+        }
+
+        @unlink($tmpFile);
+        return $buffer;
     }
 }
 

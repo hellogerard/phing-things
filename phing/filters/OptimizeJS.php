@@ -2,9 +2,9 @@
 
 require_once 'phing/filters/BaseParamFilterReader.php';
 include_once 'phing/filters/ChainableReader.php';
-require_once 'phing/filters/CSSOptimizer.php';
+require_once 'phing/filters/JSOptimizer.php';
 
-class OptimizeCSS extends BaseParamFilterReader implements ChainableReader
+class OptimizeJS extends BaseParamFilterReader implements ChainableReader
 {
     /**
      * Returns the filtered stream. 
@@ -70,11 +70,12 @@ class OptimizeCSS extends BaseParamFilterReader implements ChainableReader
             throw new BuildException("\"yui.path\" parameter not set");
         }
 
-        // find groups of CSS link tags and replace them with a single link a
-        // bundled, minified, timestamped resource. 
+        // find groups of JS link tags and replace them with a single link a
+        // bundled, minified, timestamped resource. ignore externally hosted
+        // files (e.g. jquery).
 
-        $optomizer = new CSSOptimizer($host, $yuiPath, $webRoot, $toDir, $this);
-        $pattern = '/(<link .*href="[^"]*".*\/>\s*)+/';
+        $optomizer = new JSOptimizer($host, $yuiPath, $webRoot, $toDir, $this);
+        $pattern = '/(<script .*src="[^h|"]*".*><\/script>\s*)+/';
         $buffer = preg_replace_callback($pattern, array($optomizer, "optimize"), $buffer);
 
 
@@ -82,18 +83,18 @@ class OptimizeCSS extends BaseParamFilterReader implements ChainableReader
     }
 
     /**
-     * Creates a new OptimizeCSS filter using the passed in Reader for
+     * Creates a new OptimizeJS filter using the passed in Reader for
      * instantiation.
      * 
      * @param Reader $reader A Reader object providing the underlying stream.
      *               Must not be <code>null</code>.
      * 
-     * @return OptimizeCSS A new filter based on this configuration, but filtering
+     * @return OptimizeJS A new filter based on this configuration, but filtering
      *         the specified reader
      */
     function chain(Reader $reader)
     {
-        $newFilter = new OptimizeCSS($reader);
+        $newFilter = new OptimizeJS($reader);
         $newFilter->setProject($this->getProject());
         return $newFilter;
     }

@@ -62,15 +62,19 @@
          This target copies a set of static html files to a new location and
          updates paths to optimized static resources (i.e. images)
     -->
-    <target name="optimize.css">
+    <target name="optimize">
 
-        <echo msg="Filtering &lt;link&gt; tags" />
-
-        <taskdef name="consistentcopy" classname="phing.tasks.ConsistentCopy" />
+        <echo msg="Filtering &lt;link&gt; &amp; &lt;script&gt; tags" />
 
         <copy todir="${build.dest}" overwrite="true">
             <filterchain>
                 <filterreader classname="phing.filters.OptimizeCSS">
+                    <param name="static.host" value="${static.host}/cache"/>
+                    <param name="webroot" value="${build.src}"/>
+                    <param name="todir" value="${build.dest}/cache"/>
+                    <param name="yui.path" value="${yui.path}"/>
+                </filterreader>
+                <filterreader classname="phing.filters.OptimizeJS">
                     <param name="static.host" value="${static.host}/cache"/>
                     <param name="webroot" value="${build.src}"/>
                     <param name="todir" value="${build.dest}/cache"/>
@@ -82,35 +86,6 @@
                 <include name="**/*.html" />
             </fileset>
         </copy>
-
-    </target>
-
-
-    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-
-
-    <!--
-         This target copies a set of static html files to a new location and
-         updates paths to optimized static resources (i.e. images)
-    -->
-    <target name="optimize.js">
-
-        <echo msg="Filtering &lt;script&gt; tags" />
-
-        <taskdef name="consistentcopy" classname="phing.tasks.ConsistentCopy" />
-
-        <consistentcopy todir="${build.dest}" tstamp="false">
-            <filterchain>
-                <filterreader classname="phing.filters.OptimizeJS">
-                    <param name="static.host" value="${static.host}"/>
-                </filterreader>
-            </filterchain>
-
-            <fileset dir="${build.src}">
-                <include name="**/*.html" />
-            </fileset>
-        </consistentcopy>
 
     </target>
 
