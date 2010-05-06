@@ -1,0 +1,181 @@
+<?xml version="1.0"?>
+
+<!--
+    This is a phing build file. To run this, type `phing` in this directory.
+
+    See: http://phing.info 
+         http://phing.info/trac/wiki/Users/Download (installation)
+-->
+
+<project name="Acme" basedir="." default="main">
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++ Configuration +++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!-- This sets the PHP include path -->
+    <includepath classpath="." />
+
+    <!-- This is the prefix for the URL for static content -->
+    <property name="static.host" value="phing-things.local" />
+
+    <!-- This is the path to the YUI Compressor jar file -->
+    <property name="yui.path" value="vendor/yuicompressor-2.4.2/build/yuicompressor-2.4.2.jar" />
+
+    <property name="build.src" value="mysite" />
+    <property name="build.dest" value="build" />
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++ Targets +++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!-- This target optimizes a set of image files in place -->
+    <target name="optimize.images">
+
+        <echo msg="Optimizing images with external programs" />
+
+        <!-- Tell phing where to find this task class -->
+        <taskdef name="optimizeimages" classname="phing.tasks.OptimizeImagesTask" />
+
+        <optimizeimages>
+
+            <!-- Place any images you want to optimize in here -->
+            <fileset dir="${build.dest}">
+                <include name="**/*.gif" />
+                <include name="**/*.jpg" />
+                <include name="**/*.png" />
+            </fileset>
+
+        </optimizeimages>
+
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!--
+         This target copies a set of static html files to a new location and
+         updates paths to optimized static resources (i.e. images)
+    -->
+    <target name="optimize.css">
+
+        <echo msg="Filtering &lt;link&gt; tags" />
+
+        <taskdef name="consistentcopy" classname="phing.tasks.ConsistentCopy" />
+
+        <copy todir="${build.dest}" overwrite="true">
+            <filterchain>
+                <filterreader classname="phing.filters.OptimizeCSS">
+                    <param name="static.host" value="${static.host}/cache"/>
+                    <param name="webroot" value="${build.src}"/>
+                    <param name="todir" value="${build.dest}/cache"/>
+                    <param name="yui.path" value="${yui.path}"/>
+                </filterreader>
+            </filterchain>
+
+            <fileset dir="${build.src}">
+                <include name="**/*.html" />
+            </fileset>
+        </copy>
+
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!--
+         This target copies a set of static html files to a new location and
+         updates paths to optimized static resources (i.e. images)
+    -->
+    <target name="optimize.js">
+
+        <echo msg="Filtering &lt;script&gt; tags" />
+
+        <taskdef name="consistentcopy" classname="phing.tasks.ConsistentCopy" />
+
+        <consistentcopy todir="${build.dest}" tstamp="false">
+            <filterchain>
+                <filterreader classname="phing.filters.OptimizeJS">
+                    <param name="static.host" value="${static.host}"/>
+                </filterreader>
+            </filterchain>
+
+            <fileset dir="${build.src}">
+                <include name="**/*.html" />
+            </fileset>
+        </consistentcopy>
+
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!-- This target runs YUI Compressor on the fileset -->
+    <target name="minify">
+
+        <taskdef name="minify" classname="phing.tasks.MinifyJSTask" />
+
+        <minify yuicompressorpath="true">
+            <fileset dir="application/web/_common/gomobile/js" >
+                <include name="**/*.js"/>
+                <exclude name="**/*.min.js"/>
+            </fileset>
+        </minify>
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!--
+         This target pre-compiles all Smarty template files.
+    -->
+
+    <target name="smarty">
+
+        <taskdef name="smartycompile" classname="phing.tasks.SmartyCompileTask" />
+
+		<adhoc-task name="foo"><![CDATA[
+			class FooTest extends Task {
+				function main() {
+                    $_SERVER['DOCUMENT_ROOT'] = "html";
+                    unset($_SERVER['PHP_SELF']);
+				}
+			}
+		]]></adhoc-task>
+	
+		<foo />
+
+        <smartycompile
+            compilePath="compile"
+            pluginsPath="smarty_plugins"
+            partnersDir="partners"
+            expand="true">
+
+            <fileset dir="${tpls.dest}">
+                <include name="**/*.tpl" />
+                <exclude name="partners/**" />
+            </fileset>
+        </smartycompile>
+
+        <smartycompile
+            compilePath="compile"
+            pluginsPath="smarty_plugins"
+            partnersDir="partners">
+
+            <fileset dir="${tpls.dest}">
+                <include name="partners/**/*.tpl" />
+            </fileset>
+        </smartycompile>
+
+    </target>
+
+</project>
