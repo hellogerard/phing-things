@@ -13,6 +13,7 @@ class ImageOptimizer
     private $_webRoot;
     private $_toDir;
     private $_phing;
+    private $_type;
 
     public function __construct($host, $webRoot, $toDir, $phing)
     {
@@ -27,22 +28,27 @@ class ImageOptimizer
         $output = '';
 
         // matched buffer comes in from preg_replace_callback() as array
-        $infile = $buffer[0];
+        $buffer = $buffer[0];
 
-        // set up some variables for str_replace()
-        $needles = array('/', '.gif');
-        $replace = array('.', '.png');
+        // get URL's for each image files in each image tag
+        // assume it's a CSS first, then assume it's image tag
 
-        // get the final filename
-        $outfile = str_replace($needles, $replace, $infile);
+        preg_match_all("/url\('?(.*)'?\)/", $buffer, $urls);
+        $this->_type = 'css';
+        if (empty($urls[1][0]))
+        {
+            preg_match_all('/src="([^"]*)"/', $buffer, $urls);
+            $this->_type = 'img';
+        }
+
+        $infile = $urls[1][0];
+        $infile = trim(trim($infile), '/');
 
         // build the optimized output file
         // the latest mod time of the image is in output file name
         try
         {
-            $this->_phing->log("Building {$this->_toDir}/$outfile.js", Project::MSG_VERBOSE);
-
-            $latest = $this->_build($outfile, $infile);
+            $outfile = $this->_build($infile);
         }
         catch (Exception $e)
         {
@@ -50,37 +56,78 @@ class ImageOptimizer
         }
 
         // output the static image tag
-        $twoBitValue = 0x3 & crc32("$outfile-$latest.js");
+        $twoBitValue = 0x3 & crc32($outfile);
         $host = str_replace('?', $twoBitValue, $this->_host);
-        $path = "http://$host/$outfile-$latest.js";
-        return $path;
+        $path = "http://$host/$outfile";
+
+        $output = "url($path)";
+        if ($this->_type == 'img')
+        {
+            $output = "src=\"$path\"";
+        }
+
+        return $output;
     }
 
-    private function _build($outfile, $infile)
+    private function _build($infile)
     {
-        $infile = trim($infile, '/');
-
-        $latest = filemtime("{$this->_webRoot}/$infile");
-
         if (! file_exists($this->_toDir) && ! mkdir($this->_toDir, 0755, true))
         {
             throw new Exception("Unable to create {$this->_toDir}");
         }
 
-        $this->_optimize("{$this->_webRoot}/$infile");
+        // get the last modified time
+        $mtime = filemtime("{$this->_webRoot}/$infile");
 
-        return $latest;
+        // set up some variables for str_replace()
+        $needles = array('/', '.gif', '.png', '.jpg');
+        $replace = array('.', "-$mtime.gif", "-$mtime.png", "-$mtime.jpg");
+
+        // get the final filename
+        $outfile = str_replace($needles, $replace, $infile);
+
+        // copy the output file
+        if (! copy("{$this->_webRoot}/$infile", "{$this->_toDir}/$outfile"))
+        {
+            throw new Exception("Unable to create {$this->_toDir}/$outfile");
+        }
+
+        $outfile = $this->_optimize("{$this->_toDir}/$outfile");
+
+        return $outfile;
     }
 
     private function _optimize($file)
     {
         $type = exif_imagetype($file);
+        $return = $file;
 
         switch ($type)
         {
             case IMAGETYPE_GIF:
 
                 // convert GIFs to PNG
+                $this->_phing->log("Attempting to optimize $file", Project::MSG_VERBOSE);
+
+                clearstatcache();
+                $oldsize = filesize($file);
+
+                $pngfile = str_replace('.gif', '.png', $file);
+                $cmd = "optipng \"$file\"";
+                exec($cmd, $dummy, $status);
+
+                $newsize = filesize($pngfile);
+
+                if ($status === 0 && $newsize < $oldsize)
+                {
+                    $return = $pngfile;
+                    @unlink($file);
+                }
+                else
+                {
+                    @unlink($pngfile);
+                }
+
                 break;
 
             case IMAGETYPE_JPEG:
@@ -97,11 +144,7 @@ class ImageOptimizer
 
                 if ($status === 0 && $newsize < $oldsize)
                 {
-                    @rename($tmpfile, $file);
-                }
-                else
-                {
-                    @unlink($tmpfile);
+                    rename($tmpfile, $file);
                 }
 
                 break;
@@ -114,6 +157,7 @@ class ImageOptimizer
 
                 if ($status === 0)
                 {
+                    // success
                 }
 
                 break;
@@ -121,6 +165,8 @@ class ImageOptimizer
             default:
                 break;
         }
+
+        return $return;
     }
 }
 

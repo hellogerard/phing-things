@@ -58,30 +58,6 @@
     <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
 
 
-    <target name="optimize.images">
-
-        <copy todir="${build.dest}" overwrite="true">
-            <filterchain>
-                <filterreader classname="phing.filters.OptimizeImages">
-                    <param name="static.host" value="${static.host}/cache"/>
-                    <param name="webroot" value="${build.src}"/>
-                    <param name="todir" value="${build.dest}/cache"/>
-                </filterreader>
-            </filterchain>
-
-            <fileset dir="${build.src}">
-                <include name="**/*.html" />
-                <include name="**/*.css" />
-            </fileset>
-        </copy>
-
-    </target>
-
-
-    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-
-
     <!--
          This target copies a set of static html files to a new location and
          updates paths to optimized static resources (i.e. images)
@@ -105,9 +81,17 @@
                     <param name="yui.path" value="${yui.path}"/>
                 </filterreader>
             </filterchain>
+            <filterchain>
+                <filterreader classname="phing.filters.OptimizeImages">
+                    <param name="static.host" value="${static.host}/cache"/>
+                    <param name="webroot" value="${build.src}"/>
+                    <param name="todir" value="${build.dest}/cache"/>
+                </filterreader>
+            </filterchain>
 
             <fileset dir="${build.src}">
                 <include name="**/*.html" />
+                <include name="**/*.css" />
             </fileset>
         </copy>
 

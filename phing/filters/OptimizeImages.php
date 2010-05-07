@@ -4,7 +4,7 @@ require_once 'phing/filters/BaseParamFilterReader.php';
 include_once 'phing/filters/ChainableReader.php';
 require_once 'phing/filters/ImageOptimizer.php';
 
-class OptimizeImage extends BaseParamFilterReader implements ChainableReader
+class OptimizeImages extends BaseParamFilterReader implements ChainableReader
 {
     /**
      * Returns the filtered stream. 
@@ -66,28 +66,31 @@ class OptimizeImage extends BaseParamFilterReader implements ChainableReader
         // timestamped resource.
 
         $optomizer = new ImageOptimizer($host, $webRoot, $toDir, $this);
-        $pattern = '/src="([^"]*[gif|jpg|png])"/';
-        $buffer = preg_replace_callback($pattern, array($optomizer, "optimize"), $buffer);
+        $pattern = '/src="([^"h]*[gif|jpg|png])"/';
+        $buffer = preg_replace_callback($pattern, array($optomizer, "optimize"), $buffer, -1, $changed);
 
-        $pattern = "/url\('?.*[gif|jpg|png]'?\)/";
-        $buffer = preg_replace_callback($pattern, array($optomizer, "optimize"), $buffer);
+        if (! $changed)
+        {
+            $pattern = "/url\('?[^h]*[gif|jpg|png]'?\)/";
+            $buffer = preg_replace_callback($pattern, array($optomizer, "optimize"), $buffer, -1);
+        }
 
         return $buffer;
     }
 
     /**
-     * Creates a new OptimizeImage filter using the passed in Reader for
+     * Creates a new OptimizeImages filter using the passed in Reader for
      * instantiation.
      * 
      * @param Reader $reader A Reader object providing the underlying stream.
      *               Must not be <code>null</code>.
      * 
-     * @return OptimizeImage A new filter based on this configuration, but filtering
+     * @return OptimizeImages A new filter based on this configuration, but filtering
      *         the specified reader
      */
     function chain(Reader $reader)
     {
-        $newFilter = new OptimizeImage($reader);
+        $newFilter = new OptimizeImages($reader);
         $newFilter->setProject($this->getProject());
         return $newFilter;
     }
