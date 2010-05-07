@@ -74,7 +74,7 @@ class OptimizeCSS extends BaseParamFilterReader implements ChainableReader
         // bundled, minified, timestamped resource. 
 
         $optomizer = new CSSOptimizer($host, $yuiPath, $webRoot, $toDir, $this);
-        $pattern = '/(<link .*href="[^"]*".*\/>\s*)+/';
+        $pattern = '/(<link .*href="[^h|"]*".*\/>\s*)+/';
         $buffer = preg_replace_callback($pattern, array($optomizer, "optimize"), $buffer);
 
 

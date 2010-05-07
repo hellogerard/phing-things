@@ -32,6 +32,58 @@
     <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
 
 
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!--
+         This target copies a set of static html files to a new location and
+         updates paths to optimized static resources (i.e. images)
+    -->
+    <target name="optimize">
+
+        <echo msg="Filtering &lt;link&gt; &amp; &lt;script&gt; tags" />
+
+        <copy todir="${build.dest}">
+            <fileset dir="${build.src}">
+                <include name="**/*.*" />
+            </fileset>
+        </copy>
+
+        <reflexive>
+            <filterchain>
+                <filterreader classname="phing.filters.OptimizeImages">
+                    <param name="static.host" value="${static.host}/cache"/>
+                    <param name="webroot" value="${build.dest}"/>
+                    <param name="todir" value="${build.dest}/cache"/>
+                </filterreader>
+                <filterreader classname="phing.filters.OptimizeCSS">
+                    <param name="static.host" value="${static.host}/cache"/>
+                    <param name="webroot" value="${build.dest}"/>
+                    <param name="todir" value="${build.dest}/cache"/>
+                    <param name="yui.path" value="${yui.path}"/>
+                </filterreader>
+                <filterreader classname="phing.filters.OptimizeJS">
+                    <param name="static.host" value="${static.host}/cache"/>
+                    <param name="webroot" value="${build.dest}"/>
+                    <param name="todir" value="${build.dest}/cache"/>
+                    <param name="yui.path" value="${yui.path}"/>
+                </filterreader>
+            </filterchain>
+
+            <fileset dir="${build.dest}">
+                <include name="**/*.css" />
+                <include name="**/*.html" />
+            </fileset>
+        </reflexive>
+
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
     <!-- This target optimizes a set of image files in place -->
     <target name="images">
 
@@ -50,50 +102,6 @@
             </fileset>
 
         </optimizeimages>
-
-    </target>
-
-
-    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-
-
-    <!--
-         This target copies a set of static html files to a new location and
-         updates paths to optimized static resources (i.e. images)
-    -->
-    <target name="optimize">
-
-        <echo msg="Filtering &lt;link&gt; &amp; &lt;script&gt; tags" />
-
-        <copy todir="${build.dest}" overwrite="true">
-            <filterchain>
-                <filterreader classname="phing.filters.OptimizeCSS">
-                    <param name="static.host" value="${static.host}/cache"/>
-                    <param name="webroot" value="${build.src}"/>
-                    <param name="todir" value="${build.dest}/cache"/>
-                    <param name="yui.path" value="${yui.path}"/>
-                </filterreader>
-                <filterreader classname="phing.filters.OptimizeJS">
-                    <param name="static.host" value="${static.host}/cache"/>
-                    <param name="webroot" value="${build.src}"/>
-                    <param name="todir" value="${build.dest}/cache"/>
-                    <param name="yui.path" value="${yui.path}"/>
-                </filterreader>
-            </filterchain>
-            <filterchain>
-                <filterreader classname="phing.filters.OptimizeImages">
-                    <param name="static.host" value="${static.host}/cache"/>
-                    <param name="webroot" value="${build.src}"/>
-                    <param name="todir" value="${build.dest}/cache"/>
-                </filterreader>
-            </filterchain>
-
-            <fileset dir="${build.src}">
-                <include name="**/*.html" />
-                <include name="**/*.css" />
-            </fileset>
-        </copy>
 
     </target>
 

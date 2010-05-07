@@ -166,7 +166,7 @@ class ImageOptimizer
                 break;
         }
 
-        return $return;
+        return basename($return);
     }
 }
 
