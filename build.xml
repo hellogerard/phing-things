@@ -7,7 +7,7 @@
          http://phing.info/trac/wiki/Users/Download (installation)
 -->
 
-<project name="Acme" basedir="." default="main">
+<project name="MySite" basedir="." default="main">
 
     <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- +++++++++++++++ Configuration +++++++++++++++++++++++++++++++++++++ -->
@@ -33,7 +33,7 @@
 
 
     <!-- This target optimizes a set of image files in place -->
-    <target name="optimize.images">
+    <target name="images">
 
         <echo msg="Optimizing images with external programs" />
 
@@ -50,6 +50,30 @@
             </fileset>
 
         </optimizeimages>
+
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <target name="optimize.images">
+
+        <copy todir="${build.dest}" overwrite="true">
+            <filterchain>
+                <filterreader classname="phing.filters.OptimizeImages">
+                    <param name="static.host" value="${static.host}/cache"/>
+                    <param name="webroot" value="${build.src}"/>
+                    <param name="todir" value="${build.dest}/cache"/>
+                </filterreader>
+            </filterchain>
+
+            <fileset dir="${build.src}">
+                <include name="**/*.html" />
+                <include name="**/*.css" />
+            </fileset>
+        </copy>
 
     </target>
 
