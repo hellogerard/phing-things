@@ -1,24 +1,24 @@
 .box { 
-	background: url(/images/nt.jpg) repeat;
+	background: url(/images/nt.gif) repeat;
 	width: 690px;
 	text-align:left;
 	margin:40px auto;
  }
  
 .boxtop div {
-	background: url(/images/tl.jpg) no-repeat top left; 
+	background: url(/images/tl.png) no-repeat top left; 
  }
  
 .boxtop { 
-	background: url(/images/tr.jpg) no-repeat top right;
+	background: url(/images/tr.png) no-repeat top right;
  }
 
 .boxbottom div {
-	background: url(/images/bl.jpg) no-repeat bottom left;
+	background: url(/images/bl.png) no-repeat bottom left;
  }
  
 .boxbottom {
-	background: url(/images/br.jpg) no-repeat bottom right;
+	background: url(/images/br.png) no-repeat bottom right;
  }
 
 .boxtop div, .boxtop, .boxbottom div, .boxbottom {
