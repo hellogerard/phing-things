@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<checkstyle version="1.2.2">
+ <file name="C:\_zipscene\MobilePlatform\application\controllers\IndexController.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Acl.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Auth.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\BusinessObject.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Controller.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Database.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Errors.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Form.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Logger.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\ObjectFactory.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Router.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\SmartyView.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\TextUtilities.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Age.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Date.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Equals.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Expires.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\NotEquals.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Password.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Phone.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Slug.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Uri.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\UserDoesExist.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\UserNotTaken.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\lib\Validate\Zipcode.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\models\ContentFactory.php">
+ </file>
+ <file name="C:\_zipscene\MobilePlatform\application\models\User.php">
+ </file>
+</checkstyle>

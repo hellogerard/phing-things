@@ -119,15 +119,59 @@
                 <exclude name="**/*.min.js"/>
             </fileset>
         </minify>
+
     </target>
 
 
     <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
     <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
-    <!--
-         This target pre-compiles all Smarty template files.
-    -->
 
+
+    <!-- 
+         This target generates HTML reports from the Checkstyle output files
+    -->
+    <target name="checkstyle">
+
+        <taskdef name="checkstyle-report" classname="phing.tasks.CheckstyleReportTask" />
+
+        <checkstyle-report infile="${build.src}/reports/checkstyle.xml"
+            styledir="phing/etc"
+            format="frames-errors"
+            todir="${build.dest}/reports"/>
+
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!--
+         This target runs all phing build files in subfolders.
+    -->
+    <target name="forkphing">
+
+        <taskdef name="forkphing" classname="phing.tasks.ForkPhingTask" />
+
+        <!-- Find and run all build.xml files except for this one -->
+        <forkphing checkreturn="true" passthru="true">
+            <fileset dir=".">
+                <include name="**/build.xml" />
+                <exclude name="build.xml" />
+                <exclude name="vendor/**" />
+            </fileset>
+        </forkphing>
+
+    </target>
+
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <!--
+         This target pre-compiles all Smarty template files. EXPERIMENTAL!
+    -->
     <target name="smarty">
 
         <taskdef name="smartycompile" classname="phing.tasks.SmartyCompileTask" />
@@ -135,7 +179,7 @@
 		<adhoc-task name="foo"><![CDATA[
 			class FooTest extends Task {
 				function main() {
-                    $_SERVER['DOCUMENT_ROOT'] = "html";
+                    $_SERVER['DOCUMENT_ROOT'] = "mysite";
                     unset($_SERVER['PHP_SELF']);
 				}
 			}
@@ -143,27 +187,24 @@
 	
 		<foo />
 
-        <smartycompile
-            compilePath="compile"
-            pluginsPath="smarty_plugins"
-            partnersDir="partners"
-            expand="true">
+        <smartycompile compilePath="${build.dest}/templates">
 
-            <fileset dir="${tpls.dest}">
+            <fileset dir="${build.src}">
                 <include name="**/*.tpl" />
-                <exclude name="partners/**" />
             </fileset>
+
         </smartycompile>
 
-        <smartycompile
-            compilePath="compile"
-            pluginsPath="smarty_plugins"
-            partnersDir="partners">
+    </target>
 
-            <fileset dir="${tpls.dest}">
-                <include name="partners/**/*.tpl" />
-            </fileset>
-        </smartycompile>
+
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+    <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
+
+
+    <target name="main">
+
+        <echo msg="Run `phing -l` to see a list of targets."/>
 
     </target>
 

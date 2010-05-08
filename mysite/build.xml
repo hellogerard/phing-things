@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+
+<!--
+    This is a phing build file. To run this, type `phing` in this directory.
+
+    See: http://phing.info 
+         http://phing.info/trac/wiki/Users/Download (installation)
+-->
+
+<project name="SubProject" basedir="." default="main">
+
+    <target name="main">
+
+        <echo msg="I'm in a subproject! Run me by myself or from the project root!" />
+
+    </target>
+
+</project>

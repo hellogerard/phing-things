@@ -11,9 +11,7 @@ class SmartyCompileTask extends Task
     private $_smarty = null;
     private $_compilePath;
     private $_pluginsPath;
-    private $_partnersDir;
     private $_forceCompile = false;
-    private $_expand = false;
 
     public function init()
     {
@@ -72,30 +70,6 @@ class SmartyCompileTask extends Task
         $this->_pluginsPath = $path;
     }
 
-    /**
-     * Set the directory for partners. Required.
-     *
-     * @param  boolean  Path
-     * @return void
-     * @access public
-     */
-    function setPartnersDir($dir)
-    {
-        $this->_partnersDir = $dir;
-    }
-
-    /**
-     * Set the flag for expanding partners. Optional.
-     *
-     * @param  boolean  Path
-     * @return void
-     * @access public
-     */
-    function setExpand($bool)
-    {
-        $this->_expand = $bool;
-    }
-
     public function main()
     {
         if (empty($this->filesets))
@@ -108,12 +82,7 @@ class SmartyCompileTask extends Task
             throw new BuildException("You must specify location for compiled templates.");
         }
 
-        if (empty($this->_partnersDir))
-        {
-            throw new BuildException("You must specify a list of partners.");
-        }
-
-        date_default_timezone_set("America/Kentucky/Louisville");
+        date_default_timezone_set("America/New_York");
 
         $project = $this->getProject();
         $this->_count = $this->_total = 0;
@@ -134,42 +103,14 @@ class SmartyCompileTask extends Task
         $this->_smarty->plugins_dir[] = $this->_pluginsPath;
         $this->_smarty->force_compile = $this->_forceCompile;
 
-        if ($this->_expand)
+        // process filesets
+        foreach ($this->filesets as $fs)
         {
-            // get list of all partners for expansion
-            $partners = @scandir($this->_partnersDir);
-            array_unshift($partners, 'core');
+            $ds = $fs->getDirectoryScanner($project);
+            $fromDir  = $fs->getDir($project);
+            $srcFiles = $ds->getIncludedFiles();
 
-            // for each partner, compile its templates
-            foreach ($partners as $partner)
-            {
-                if ($partner[0] == ".")
-                {
-                    continue;
-                }
-
-                // process filesets
-                foreach ($this->filesets as $fs)
-                {
-                    $ds = $fs->getDirectoryScanner($project);
-                    $fromDir  = $fs->getDir($project);
-                    $srcFiles = $ds->getIncludedFiles();
-
-                    $this->_compile($fromDir, $srcFiles, $partner);
-                }
-            }
-        }
-        else
-        {
-            // process filesets
-            foreach ($this->filesets as $fs)
-            {
-                $ds = $fs->getDirectoryScanner($project);
-                $fromDir  = $fs->getDir($project);
-                $srcFiles = $ds->getIncludedFiles();
-
-                $this->_compile($fromDir, $srcFiles);
-            }
+            $this->_compile($fromDir, $srcFiles);
         }
 
         $this->log("Compiled " . $this->_count . " out of " . $this->_total . " Smarty templates");
@@ -181,23 +122,13 @@ class SmartyCompileTask extends Task
      * @access  private
      * @return  void
      */
-    private function _compile(&$baseDir, &$names, $partner=null)
+    private function _compile(&$baseDir, &$names)
     {
         $this->_smarty->template_dir = $baseDir;
 
         for ($i = 0, $size = count($names); $i < $size; $i++)
         {
             $name = $names[$i];
-
-            if ($partner)
-            {
-                $this->_smarty->_compile_id = $partner;
-            }
-            else
-            {
-                preg_match("/partners\\" . DIRECTORY_SEPARATOR . "([a-z0-9-]+)\\" . DIRECTORY_SEPARATOR . "/", $name, $matches);
-                $this->_smarty->_compile_id = $matches[1];
-            }
 
             //echo "{$matches[1]} $name\n";
 

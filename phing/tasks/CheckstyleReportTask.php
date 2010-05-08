@@ -71,10 +71,10 @@ class CheckstyleReportTask extends Task
 	{
 		$dir = new PhingFile($this->toDir);
 		
-		if (!$dir->exists())
-		{
-			throw new BuildException("Directory '" . $this->toDir . "' does not exist");
-		}
+        if (! $dir->exists() && ! $dir->mkdirs())
+        {
+            throw new BuildException("Unable to create '" . $this->toDir . "'");
+        }
 		
 		$xslfile = $this->getStyleSheet();
 
