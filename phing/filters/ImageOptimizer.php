@@ -116,16 +116,16 @@ class ImageOptimizer
                 $cmd = "optipng \"$file\"";
                 exec($cmd, $dummy, $status);
 
-                $newsize = filesize($pngfile);
-
                 if ($status === 0 && $newsize < $oldsize)
                 {
+                    $newsize = filesize($pngfile);
                     $return = $pngfile;
                     @unlink($file);
                     $success = true;
                 }
                 else
                 {
+                    $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
                     @unlink($pngfile);
                 }
 
@@ -139,12 +139,15 @@ class ImageOptimizer
                 $tmpfile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . basename($file);
                 exec("jpegtran -optimize -outfile \"$tmpfile\" \"$file\"", $dummy, $status);
 
-                $newsize = filesize($tmpfile);
-
                 if ($status === 0 && $newsize < $oldsize)
                 {
+                    $newsize = filesize($tmpfile);
                     @rename($tmpfile, $file);
                     $success = true;
+                }
+                else
+                {
+                    $this->_phing->log("jpegtran not found in path.", Project::MSG_WARN);
                 }
 
                 break;
@@ -157,11 +160,14 @@ class ImageOptimizer
                 $cmd = "optipng \"$file\"";
                 exec($cmd, $dummy, $status);
 
-                $newsize = filesize($file);
-
                 if ($status === 0 && $newsize < $oldsize)
                 {
+                    $newsize = filesize($file);
                     $success = true;
+                }
+                else
+                {
+                    $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
                 }
 
                 break;
