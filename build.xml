@@ -109,12 +109,12 @@
 
 
     <!-- This target runs YUI Compressor on the fileset -->
-    <target name="minify">
+    <target name="minify.js">
 
         <taskdef name="minify" classname="phing.tasks.MinifyJSTask" />
 
-        <minify yuicompressorpath="true">
-            <fileset dir="application/web/_common/gomobile/js" >
+        <minify yuicompressorpath="${yui.path}">
+            <fileset dir="${build.src}" >
                 <include name="**/*.js"/>
                 <exclude name="**/*.min.js"/>
             </fileset>

@@ -6,8 +6,7 @@ class MinifyJSTask extends Task
 {
     protected $filesets = array();
 	protected $yuiCompressorPath = "";
-    private $_count = 0;
-    private $_total = 0;
+    private $_count, $_total, $_oldsize, $_newsize = 0;
 
 	function setYuiCompressorPath($path)
 	{
@@ -40,20 +39,18 @@ class MinifyJSTask extends Task
             return;
         }
 
-        $project = $this->getProject();
-
         // process filesets
-        $this->_count = $this->_total = 0;
         foreach ($this->filesets as $fs)
         {
-            $ds = $fs->getDirectoryScanner($project);
-            $fromDir  = $fs->getDir($project);
+            $ds = $fs->getDirectoryScanner($this->getProject());
+            $fromDir  = $fs->getDir($this->getProject());
             $srcFiles = $ds->getIncludedFiles();
 
             $this->_minify($fromDir, $srcFiles);
         }
 
-        $this->log("Minified {$this->_count} out of {$this->_total} JavaScript files");
+        $pct = round(($this->_newsize / $this->_oldsize) * 100, 2);
+        $this->log("Minified {$this->_count}/{$this->_total} files ({$this->_newsize}/{$this->_oldsize} bytes or {$pct}%)");
     }
 
 
@@ -63,38 +60,53 @@ class MinifyJSTask extends Task
      * @access  private
      * @return  void
      */
-    private function _minify(&$baseDir, &$names)
+    private function _minify(&$baseDir, &$files)
     {
-        for ($i = 0, $size = count($names); $i < $size; $i++)
+        for ($i = 0, $size = count($files); $i < $size; $i++)
         {
-            $srcFile = $baseDir . '/' . $names[$i];
-
-            $this->log("Attempting to minify $srcFile", Project::MSG_VERBOSE);
+            $file = $baseDir . '/' . $files[$i];
+            $success = false;
 
             clearstatcache();
-            $oldsize = filesize($srcFile);
+            $oldsize = filesize($file);
 
             $tmp = (function_exists('sys_get_temp_dir')) ? sys_get_temp_dir() : '/tmp';
-            $tmpFile = tempnam($tmp, "yui");
+            $tmpfile = tempnam($tmp, "yui");
 
-            $command = "java -jar " . $this->yuiCompressorPath . " --type js -o $tmpFile $srcFile";
+            $command = "java -jar " . $this->yuiCompressorPath . " --type js -o $tmpfile $file";
             exec($command, $dummy, $status);
 
-            $newsize = filesize($tmpFile);
-
-            $this->log("Oldsize: $oldsize, Newsize: $newsize", Project::MSG_VERBOSE);
-            if ($status === 0 && $newsize < $oldsize)
+            if ($status === 0)
             {
-                $this->_count++;
-                $newFile = str_replace('.js', '.min.js', $srcFile);
-                @rename($tmpFile, $newFile);
+                $newsize = filesize($tmpfile);
+
+                if ($newsize < $oldsize)
+                {
+                    $newFile = str_replace('.js', '.min.js', $file);
+                    @rename($tmpfile, $newFile);
+                    $success = true;
+                }
             }
             else
             {
-                @unlink($tmpFile);
+                @unlink($tmpfile);
             }
 
+            $this->_oldsize += $oldsize;
             $this->_total++;
+            $pct = round(($newsize / $oldsize) * 100, 2);
+
+            if ($success)
+            {
+                $this->_count++;
+                $this->_newsize += $newsize;
+                $this->log("Optimized $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
+            }
+            else
+            {
+                $this->_newsize += $oldsize;
+                $this->log("Skipped $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
+            }
         }
     }
 }
