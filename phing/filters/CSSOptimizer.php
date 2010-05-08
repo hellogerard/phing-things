@@ -50,20 +50,15 @@ class CSSOptimizer
             }
         }
 
-        // set up some variables for str_replace()
-        $needles = array('/', '.css');
-        $replace = array('.', '');
-
-        // get the final filename
-        $bundlefile = str_replace($needles, $replace, join('-', $files));
-
         // build the combined, minified output file
         // the latest mod time of the set is in output file name
         try
         {
-            $this->_phing->log("Building {$this->_toDir}/$bundlefile.css", Project::MSG_VERBOSE);
+            $outfile = $this->_getName($files);
 
-            $latest = $this->_build($bundlefile, $files);
+            $this->_phing->log("Building {$this->_toDir}/$outfile");
+
+            $this->_build($outfile, $files);
         }
         catch (Exception $e)
         {
@@ -71,19 +66,44 @@ class CSSOptimizer
         }
 
         // output the static CSS tag
-        $twoBitValue = 0x3 & crc32("$bundlefile-$latest.css");
+        $twoBitValue = 0x3 & crc32("$outfile");
         $host = str_replace('?', $twoBitValue, $this->_host);
-        $path = "http://$host/$bundlefile-$latest.css";
+        $path = "http://$host/$outfile";
         $output = "<link href=\"$path\" rel=\"stylesheet\" type=\"text/css\" />\n";
         return $output;
     }
 
-    private function _build($bundlefile, $files)
+    private function _getName($files)
+    {
+        // set up some variables for str_replace()
+        $needles = array('/', '.css');
+        $replace = array('.', '');
+
+        // get the final filename
+        $bundlefile = str_replace($needles, $replace, join('-', $files));
+
+        $latest = 0;
+
+        foreach ($files as $file)
+        {
+            $file = trim($file, '/');
+
+            $mtime = filemtime("{$this->_webRoot}/$file");
+            if ($mtime > $latest)
+            {
+                // get the latest modification time
+                $latest = $mtime;
+            }
+        }
+
+        return "$bundlefile-$latest.css";
+    }
+
+    private function _build($outfile, $files)
     {
         static $alreadyLoaded = array();
 
         $buffer = '';
-        $latest = 0;
 
         foreach ($files as $file)
         {
@@ -98,13 +118,6 @@ class CSSOptimizer
 
             $file = trim($file, '/');
 
-            $mtime = filemtime("{$this->_webRoot}/$file");
-            if ($mtime > $latest)
-            {
-                // get the latest modification time
-                $latest = $mtime;
-            }
-
             $buffer .= $this->_minify("{$this->_webRoot}/$file") . "\n";
         }
 
@@ -114,25 +127,25 @@ class CSSOptimizer
             throw new Exception("Unable to create {$this->_toDir}");
         }
         
-        if (($handle = fopen("{$this->_toDir}/$bundlefile-$latest.css", 'w')) === false)
+        if (($handle = fopen("{$this->_toDir}/$outfile", 'w')) === false)
         {
-            throw new Exception("Unable to create {$this->_toDir}/$bundlefile-$latest.css");
+            throw new Exception("Unable to create {$this->_toDir}/$outfile");
         }
 
         if (fwrite($handle, $buffer) === false)
         {
             fclose($handle);
-            throw new Exception("Unable to write to {$this->_toDir}/$bundlefile-$latest.css");
+            throw new Exception("Unable to write to {$this->_toDir}/$outfile");
         }
 
         fclose($handle);
-
-        return $latest;
     }
 
     private function _minify($file)
     {
-        $this->_phing->log("Attempting to minify $file", Project::MSG_VERBOSE);
+        $success = false;
+        clearstatcache();
+        $oldsize = filesize($file);
 
         $tmp = (function_exists('sys_get_temp_dir')) ? sys_get_temp_dir() : '/tmp';
         $tmpFile = tempnam($tmp, "yui");
@@ -140,9 +153,12 @@ class CSSOptimizer
         $command = "java -jar " . $this->_yuiPath . " --type css -o $tmpFile $file";
         exec($command, $dummy, $status);
 
+        $newsize = filesize($tmpFile);
+
         if ($status === 0)
         {
             $buffer = file_get_contents($tmpFile);
+            $success = true;
         }
         else
         {
@@ -151,6 +167,17 @@ class CSSOptimizer
         }
 
         @unlink($tmpFile);
+
+        if ($success)
+        {
+            $pct = round(($newsize / $oldsize) * 100, 2);
+            $this->_phing->log("Minified $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
+        }
+        else
+        {
+            $this->_phing->log("Skipped $file", Project::MSG_VERBOSE);
+        }
+
         return $buffer;
     }
 }

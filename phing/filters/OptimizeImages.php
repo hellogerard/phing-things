@@ -71,7 +71,7 @@ class OptimizeImages extends BaseParamFilterReader implements ChainableReader
 
         if (! $changed)
         {
-            $pattern = "/url\('?[^h]*[gif|jpg|png]'?\)/";
+            $pattern = "/url\('?[^h\)]*[gif|jpg|png]'?\)/";
             $buffer = preg_replace_callback($pattern, array($optomizer, "optimize"), $buffer, -1);
         }
 

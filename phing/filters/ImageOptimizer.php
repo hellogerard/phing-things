@@ -101,14 +101,14 @@ class ImageOptimizer
     {
         $type = exif_imagetype($file);
         $return = $file;
+        $oldsize = $newsize = 0;
+        $success = false;
 
         switch ($type)
         {
             case IMAGETYPE_GIF:
 
                 // convert GIFs to PNG
-                $this->_phing->log("Attempting to optimize $file", Project::MSG_VERBOSE);
-
                 clearstatcache();
                 $oldsize = filesize($file);
 
@@ -122,6 +122,7 @@ class ImageOptimizer
                 {
                     $return = $pngfile;
                     @unlink($file);
+                    $success = true;
                 }
                 else
                 {
@@ -131,8 +132,6 @@ class ImageOptimizer
                 break;
 
             case IMAGETYPE_JPEG:
-
-                $this->_phing->log("Attempting to optimize $file", Project::MSG_VERBOSE);
 
                 clearstatcache();
                 $oldsize = filesize($file);
@@ -144,26 +143,41 @@ class ImageOptimizer
 
                 if ($status === 0 && $newsize < $oldsize)
                 {
-                    rename($tmpfile, $file);
+                    @rename($tmpfile, $file);
+                    $success = true;
                 }
 
                 break;
 
             case IMAGETYPE_PNG:
 
-                $this->_phing->log("Attempting to optimize $file", Project::MSG_VERBOSE);
+                clearstatcache();
+                $oldsize = filesize($file);
+
                 $cmd = "optipng \"$file\"";
                 exec($cmd, $dummy, $status);
 
-                if ($status === 0)
+                $newsize = filesize($file);
+
+                if ($status === 0 && $newsize < $oldsize)
                 {
-                    // success
+                    $success = true;
                 }
 
                 break;
 
             default:
                 break;
+        }
+
+        if ($success)
+        {
+            $pct = round(($newsize / $oldsize) * 100, 2);
+            $this->_phing->log("Optimized $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
+        }
+        else
+        {
+            $this->_phing->log("Skipped $file ($oldsize smaller than $newsize bytes)", Project::MSG_VERBOSE);
         }
 
         return basename($return);
