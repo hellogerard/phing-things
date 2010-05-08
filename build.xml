@@ -85,9 +85,7 @@
 
 
     <!-- This target optimizes a set of image files in place -->
-    <target name="images">
-
-        <echo msg="Optimizing images with external programs" />
+    <target name="optimize.images">
 
         <!-- Tell phing where to find this task class -->
         <taskdef name="optimizeimages" classname="phing.tasks.OptimizeImagesTask" />
@@ -95,7 +93,7 @@
         <optimizeimages>
 
             <!-- Place any images you want to optimize in here -->
-            <fileset dir="${build.dest}">
+            <fileset dir="${build.src}">
                 <include name="**/*.gif" />
                 <include name="**/*.jpg" />
                 <include name="**/*.png" />

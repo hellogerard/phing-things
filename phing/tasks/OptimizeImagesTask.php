@@ -5,8 +5,7 @@ include_once 'phing/Task.php';
 class OptimizeImagesTask extends Task
 {
     protected $filesets = array();
-    private $_count = 0;
-    private $_total = 0;
+    private $_count, $_total, $_oldsize, $_newsize = 0;
 
     /**
      * Nested creator, creates a FileSet for this task
@@ -22,33 +21,18 @@ class OptimizeImagesTask extends Task
 
     public function main()
     {
-        if (strpos(PHP_OS, "WIN") !== false)
+        // process filesets
+        foreach ($this->filesets as $fs)
         {
-            $this->log("Cannot run this task on Windows", Project::MSG_WARN);
-            return;
+            $ds = $fs->getDirectoryScanner($this->getProject());
+            $fromDir  = $fs->getDir($this->getProject());
+            $srcFiles = $ds->getIncludedFiles();
+
+            $this->_optimize($fromDir, $srcFiles);
         }
 
-        $this->_count = $this->_total = 0;
-        if (! $this->project->getProperty("copiedFilesMap"))
-        {
-            $project = $this->getProject();
-
-            // process filesets
-            foreach ($this->filesets as $fs)
-            {
-                $ds = $fs->getDirectoryScanner($project);
-                $fromDir  = $fs->getDir($project);
-                $srcFiles = $ds->getIncludedFiles();
-
-                $this->_optimize($fromDir, $srcFiles);
-            }
-        }
-        else
-        {
-            $this->_optimize($fromDir, array_keys($this->project->getProperty("copiedFilesMap")));
-        }
-
-        $this->log("Optimized " . $this->_count . " out of " . $this->_total . " image files");
+        $pct = round(($this->_newsize / $this->_oldsize) * 100, 2);
+        $this->log("Optimized {$this->_count}/{$this->_total} files ({$this->_newsize}/{$this->_oldsize} bytes or {$pct}%)");
     }
 
 
@@ -58,54 +42,96 @@ class OptimizeImagesTask extends Task
      * @access  private
      * @return  void
      */
-    private function _optimize(&$baseDir, &$names)
+    private function _optimize(&$baseDir, &$files)
     {
-        for ($i = 0, $size = count($names); $i < $size; $i++)
+        for ($i = 0, $size = count($files); $i < $size; $i++)
         {
-            $name = $baseDir . '/' . $names[$i];
-            $arr = getimagesize($name);
-            $type = $arr[2];
+            $file = $baseDir . '/' . $files[$i];
+            $type = exif_imagetype($file);
+            $success = false;
 
             switch ($type)
             {
                 case IMAGETYPE_GIF:
 
-                    // gif not yet implemented
+                    // convert GIFs to PNG
+                    clearstatcache();
+                    $oldsize = filesize($file);
+
+                    $pngfile = str_replace('.gif', '.png', $file);
+                    $cmd = "optipng \"$file\"";
+                    exec($cmd, $dummy, $status);
+
+                    if ($status === 0)
+                    {
+                        $newsize = filesize($pngfile);
+
+                        if ($newsize < $oldsize)
+                        {
+                            $return = $pngfile;
+                            @unlink($file);
+                            $success = true;
+                        }
+                        else
+                        {
+                            @unlink($pngfile);
+                        }
+                    }
+                    else
+                    {
+                        $newsize = $oldsize;
+                        $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
+                    }
+
                     break;
 
                 case IMAGETYPE_JPEG:
 
-                    $this->log("Attempting to optimize $name", Project::MSG_VERBOSE);
-
                     clearstatcache();
-                    $oldsize = filesize($name);
+                    $oldsize = filesize($file);
 
-                    $outfile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . basename($name);
-                    exec("jpegtran -optimize -outfile \"$outfile\" \"$name\"", $dummy, $status);
+                    $tmpfile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . basename($file);
+                    exec("jpegtran -optimize -outfile \"$tmpfile\" \"$file\"", $dummy, $status);
 
-                    $newsize = filesize($outfile);
-
-                    if ($status === 0 && $newsize < $oldsize)
+                    if ($status === 0)
                     {
-                        $this->_count++;
-                        @rename($outfile, $name);
+                        $newsize = filesize($tmpfile);
+
+                        if ($newsize < $oldsize)
+                        {
+                            @rename($tmpfile, $file);
+                            $success = true;
+                        }
                     }
                     else
                     {
-                        @unlink($outfile);
+                        $newsize = $oldsize;
+                        $this->_phing->log("jpegtran not found in path.", Project::MSG_WARN);
                     }
 
                     break;
 
                 case IMAGETYPE_PNG:
 
-                    $this->log("Attempting to optimize $name", Project::MSG_VERBOSE);
-                    $cmd = "optipng \"$name\"";
+                    clearstatcache();
+                    $oldsize = filesize($file);
+
+                    $cmd = "optipng \"$file\"";
                     exec($cmd, $dummy, $status);
 
                     if ($status === 0)
                     {
-                        $this->_count++;
+                        $newsize = filesize($file);
+
+                        if ($newsize < $oldsize)
+                        {
+                            $success = true;
+                        }
+                    }
+                    else
+                    {
+                        $newsize = $oldsize;
+                        $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
                     }
 
                     break;
@@ -114,7 +140,21 @@ class OptimizeImagesTask extends Task
                     break;
             }
 
+            $this->_oldsize += $oldsize;
             $this->_total++;
+            $pct = round(($newsize / $oldsize) * 100, 2);
+
+            if ($success)
+            {
+                $this->_count++;
+                $this->_newsize += $newsize;
+                $this->log("Optimized $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
+            }
+            else
+            {
+                $this->_newsize += $oldsize;
+                $this->log("Skipped $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
+            }
         }
     }
 }

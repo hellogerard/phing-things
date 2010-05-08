@@ -153,29 +153,29 @@ class CSSOptimizer
         $command = "java -jar " . $this->_yuiPath . " --type css -o $tmpFile $file";
         exec($command, $dummy, $status);
 
-        $newsize = filesize($tmpFile);
-
         if ($status === 0)
         {
+            $newsize = filesize($tmpFile);
             $buffer = file_get_contents($tmpFile);
             $success = true;
         }
         else
         {
             // if error, return original file
+            $newsize = $oldsize;
             $buffer = file_get_contents($file);
         }
 
         @unlink($tmpFile);
+        $pct = round(($newsize / $oldsize) * 100, 2);
 
         if ($success)
         {
-            $pct = round(($newsize / $oldsize) * 100, 2);
             $this->_phing->log("Minified $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
         }
         else
         {
-            $this->_phing->log("Skipped $file", Project::MSG_VERBOSE);
+            $this->_phing->log("Skipped $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
         }
 
         return $buffer;

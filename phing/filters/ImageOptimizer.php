@@ -116,17 +116,25 @@ class ImageOptimizer
                 $cmd = "optipng \"$file\"";
                 exec($cmd, $dummy, $status);
 
-                if ($status === 0 && $newsize < $oldsize)
+                if ($status === 0)
                 {
                     $newsize = filesize($pngfile);
-                    $return = $pngfile;
-                    @unlink($file);
-                    $success = true;
+
+                    if ($newsize < $oldsize)
+                    {
+                        $return = $pngfile;
+                        @unlink($file);
+                        $success = true;
+                    }
+                    else
+                    {
+                        @unlink($pngfile);
+                    }
                 }
                 else
                 {
+                    $newsize = $oldsize;
                     $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
-                    @unlink($pngfile);
                 }
 
                 break;
@@ -139,14 +147,19 @@ class ImageOptimizer
                 $tmpfile = sys_get_temp_dir() . DIRECTORY_SEPARATOR . basename($file);
                 exec("jpegtran -optimize -outfile \"$tmpfile\" \"$file\"", $dummy, $status);
 
-                if ($status === 0 && $newsize < $oldsize)
+                if ($status === 0)
                 {
                     $newsize = filesize($tmpfile);
-                    @rename($tmpfile, $file);
-                    $success = true;
+
+                    if ($newsize < $oldsize)
+                    {
+                        @rename($tmpfile, $file);
+                        $success = true;
+                    }
                 }
                 else
                 {
+                    $newsize = $oldsize;
                     $this->_phing->log("jpegtran not found in path.", Project::MSG_WARN);
                 }
 
@@ -160,13 +173,18 @@ class ImageOptimizer
                 $cmd = "optipng \"$file\"";
                 exec($cmd, $dummy, $status);
 
-                if ($status === 0 && $newsize < $oldsize)
+                if ($status === 0)
                 {
                     $newsize = filesize($file);
-                    $success = true;
+
+                    if ($newsize < $oldsize)
+                    {
+                        $success = true;
+                    }
                 }
                 else
                 {
+                    $newsize = $oldsize;
                     $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
                 }
 
@@ -176,14 +194,15 @@ class ImageOptimizer
                 break;
         }
 
+        $pct = round(($newsize / $oldsize) * 100, 2);
+
         if ($success)
         {
-            $pct = round(($newsize / $oldsize) * 100, 2);
             $this->_phing->log("Optimized $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
         }
         else
         {
-            $this->_phing->log("Skipped $file ($oldsize smaller than $newsize bytes)", Project::MSG_VERBOSE);
+            $this->_phing->log("Skipped $file ($newsize/$oldsize bytes or {$pct}%)", Project::MSG_VERBOSE);
         }
 
         return basename($return);
