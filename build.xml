@@ -18,7 +18,7 @@
     <includepath classpath="." />
 
     <!-- This is the prefix for the URL for static content -->
-    <property name="static.host" value="phing-things.local" />
+    <property name="static.host" value="phing-things.work.local" />
 
     <!-- This is the path to the YUI Compressor jar file -->
     <property name="yui.path" value="vendor/yuicompressor-2.4.2/build/yuicompressor-2.4.2.jar" />
@@ -38,18 +38,25 @@
 
     <!--
          This target copies a set of static html files to a new location and
-         updates paths to optimized static resources (i.e. images)
+         updates paths to optimized static resources (css, javascript, and
+         images).
     -->
     <target name="optimize">
 
         <echo msg="Filtering &lt;link&gt; &amp; &lt;script&gt; tags" />
 
+        <!-- Copy the original project to a "build" directory -->
         <copy todir="${build.dest}">
             <fileset dir="${build.src}">
                 <include name="**/*.*" />
             </fileset>
         </copy>
 
+        <!--
+             Working on the build copy, search for static resources. Optimize
+             the static resources, and dynamically update the paths to the new
+             resources.
+        -->
         <reflexive>
             <filterchain>
                 <filterreader classname="phing.filters.OptimizeImages">
@@ -84,7 +91,10 @@
     <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
 
 
-    <!-- This target optimizes a set of image files in place -->
+    <!--
+         This target optimizes a set of image files in place, modifying the
+         original image.
+    -->
     <target name="optimize.images">
 
         <!-- Tell phing where to find this task class -->
@@ -108,11 +118,19 @@
     <!-- +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++ -->
 
 
-    <!-- This target runs YUI Compressor on the fileset -->
+    <!--
+         This target minifies a set of Javascript files, creating a copy of the
+         original named with a ".min.js" extension.
+    -->
     <target name="minify.js">
 
+        <!-- Tell phing where to find this task class -->
         <taskdef name="minify" classname="phing.tasks.MinifyJSTask" />
 
+        <!--
+             Place any JS files you want to minify in here. We'll exclude JS
+             files that appear to be minimized already.
+        -->
         <minify yuicompressorpath="${yui.path}">
             <fileset dir="${build.src}" >
                 <include name="**/*.js"/>
@@ -128,10 +146,11 @@
 
 
     <!-- 
-         This target generates HTML reports from the Checkstyle output files
+         This target generates HTML reports from the Checkstyle output files.
     -->
     <target name="checkstyle">
 
+        <!-- Tell phing where to find this task class -->
         <taskdef name="checkstyle-report" classname="phing.tasks.CheckstyleReportTask" />
 
         <checkstyle-report infile="${build.src}/reports/checkstyle.xml"
