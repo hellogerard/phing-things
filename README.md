@@ -51,31 +51,22 @@ Apache configuration
 For further optimizations, make these changes to your Apache configuration
 (`httpd.conf` or `vhosts` file). 
 
-1.  Turn on compression.
-
+    # turn on compression.
     AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/x-javascript
-
-2.  Modify `ETags`. 
-
+    # modify `ETags`. 
     FileETag MTime Size
-
-3.  Turn off `.htaccess` files.
-
+    # turn off `.htaccess` files.
     AllowOverride None
-
-4.  Set `Expires` headers for static resources far in the future.
-
+    # set `Expires` headers for static resources far in the future.
     ExpiresActive On
-    ExpiresByType tet/css "access plus 1 year"
-    ExpiresByType aplication/x-javascript "accss plus 1 year"
-    ExpiresByType imge/jpeg "access plus 1 yea"
-    ExpiresByType imge/gif "access plus 1 year
-    ExpiresByType imge/png "access plus 1 year
-    
-5.  Turn on `HTTP Keep-Alive` for static resoues. Be very creful with
-    `KeepAliveTimeout`. Setting it too high wi cause Apache to consumer all the
-    memory on a machine very quickly.
-    
+    ExpiresByType text/css "access plus 1 year"
+    ExpiresByType application/x-javascript "accss plus 1 year"
+    ExpiresByType image/jpeg "access plus 1 yea"
+    ExpiresByType image/gif "access plus 1 year
+    ExpiresByType image/png "access plus 1 year
+    # Turn on `HTTP Keep-Alive` for static resources. Be very careful with
+    # `KeepAliveTimeout`. Setting it too high will cause Apache to consumer ll the
+    # memory on a machine very quickly.
     KeepAlive On
     KeepAliveTimeout 2
 
