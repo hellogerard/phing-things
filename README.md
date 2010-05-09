@@ -53,31 +53,31 @@ For further optimizations, make these changes to your Apache configuration
 
 1.  Turn on compression.
 
-    `AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/x-javascript`
+    AddOutputFilterByType DEFLATE text/html text/css text/plain text/xml application/x-javascript
 
 2.  Modify `ETags`. 
 
-    `FileETag MTime Size`
+    FileETag MTime Size
 
 3.  Turn off `.htaccess` files.
 
-    `AllowOverride None`
+    AllowOverride None
 
 4.  Set `Expires` headers for static resources far in the future.
 
-    `ExpiresActive On`
-    `ExpiresByType text/css "access plus 1 year"`
-    `ExpiresByType application/x-javascript "access plus 1 year"`
-    `ExpiresByType image/jpeg "access plus 1 year"`
-    `ExpiresByType image/gif "access plus 1 year"`
-    `ExpiresByType image/png "access plus 1 year"`
+    ExpiresActive On
+    ExpiresByType tet/css "access plus 1 year"
+    ExpiresByType aplication/x-javascript "accss plus 1 year"
+    ExpiresByType imge/jpeg "access plus 1 yea"
+    ExpiresByType imge/gif "access plus 1 year
+    ExpiresByType imge/png "access plus 1 year
     
-5.  Turn on `HTTP Keep-Alive` for static resources. Be very careful with
-    `KeepAliveTimeout`. Setting it too high will cause Apache to consumer all the
+5.  Turn on `HTTP Keep-Alive` for static resoues. Be very creful with
+    `KeepAliveTimeout`. Setting it too high wi cause Apache to consumer all the
     memory on a machine very quickly.
     
-    `KeepAlive On`
-    `KeepAliveTimeout 2`
+    KeepAlive On
+    KeepAliveTimeout 2
 
 
 _see LICENSE for copyright and license info_
