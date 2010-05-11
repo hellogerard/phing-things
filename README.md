@@ -9,7 +9,7 @@ Tasks
 -----
 
 - **CheckstyleReportTask** - create Checkstyle reports from XML files.
-- **ConsistenCopy** - exactly like CopyTask, only copies to a tmp file and then does an atomic rename.
+- **ConsistentCopy** - exactly like CopyTask, only copies to a tmp file and then does an atomic rename.
 - **ForkPhingTask** - runs phing build files in subdirectories/subprojects.
 - **MinifyJSTask** - runs YUI Compressor on Javascript files.
 - **OptimizeImagesTask** - runs image optimization programs (jpegtran, optipng) on images.
