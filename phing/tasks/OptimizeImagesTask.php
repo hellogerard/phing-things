@@ -5,7 +5,10 @@ include_once 'phing/Task.php';
 class OptimizeImagesTask extends Task
 {
     protected $filesets = array();
-    private $_count, $_total, $_oldsize, $_newsize = 0;
+    private $_count = 0;
+    private $_total = 0;
+    private $_oldsize = 0;
+    private $_newsize = 0;
 
     /**
      * Nested creator, creates a FileSet for this task
@@ -80,7 +83,7 @@ class OptimizeImagesTask extends Task
                     else
                     {
                         $newsize = $oldsize;
-                        $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
+                        $this->log("optipng not found in path.", Project::MSG_WARN);
                     }
 
                     break;
@@ -106,7 +109,7 @@ class OptimizeImagesTask extends Task
                     else
                     {
                         $newsize = $oldsize;
-                        $this->_phing->log("jpegtran not found in path.", Project::MSG_WARN);
+                        $this->log("jpegtran not found in path.", Project::MSG_WARN);
                     }
 
                     break;
@@ -131,7 +134,7 @@ class OptimizeImagesTask extends Task
                     else
                     {
                         $newsize = $oldsize;
-                        $this->_phing->log("optipng not found in path.", Project::MSG_WARN);
+                        $this->log("optipng not found in path.", Project::MSG_WARN);
                     }
 
                     break;
