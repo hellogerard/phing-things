@@ -33,7 +33,7 @@ And takes images and:
 - adds a timestamp to the filename for long-lived Expires headers
 
 This process is outlined in
-<http://www.slideshare.net/gerrys0/front-end-website-optimization-presentation>.
+<http://www.slideshare.net/hellogerard/front-end-website-optimization-presentation>.
 
 Filters:
 
